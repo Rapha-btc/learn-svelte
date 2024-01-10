@@ -6,17 +6,17 @@
 		{
 			id: uuid(),
 			title: 'Todo 1',
-			complete: true
+			completed: true
 		},
 		{
 			id: uuid(),
 			title: 'Todo 2',
-			complete: true
+			completed: true
 		},
 		{
 			id: uuid(),
 			title: 'Todo 3',
-			complete: true
+			completed: true
 		}
 	];
 	$: console.log(todos);
@@ -28,7 +28,7 @@
 			{
 				id: uuid(),
 				title: event.detail.title,
-				complete: false
+				completed: false
 			}
 		];
 	}
@@ -42,7 +42,7 @@
 			if (todo.id === event.detail.id) {
 				return {
 					...todo,
-					complete: event.detail.value
+					completed: event.detail.value
 				};
 			}
 			return { ...todo };
