@@ -8,6 +8,9 @@
 	export let todos = null;
 	export let error = null;
 	export let isLoading = false;
+	export let disableAdding = false;
+	export let disabledItems = [];
+
 	let prevTodos = todos;
 	let inputText = '';
 	let inputElement, listDiv, autoscroll, listDivScrollHeight;
@@ -71,28 +74,35 @@
 					{#if todos.length === 0}
 						<p class="state-text">No todos yet</p>
 					{:else}
-						{#each todos as { id, title, completed } (id)}
-							<li class:completed>
-								<label>
-									<input
-										on:input={(event) => {
-											event.currentTarget.checked = completed;
-											handleToggleTodo(id, !completed);
-										}}
-										type="checkbox"
-										checked={completed}
-									/>
-									{title}
-								</label>
-								<button
-									class="remove-todo-button"
-									aria-label="Remove todo: {title}"
-									on:click={() => handleRemoveTodo(id)}
-								>
-									<span style:width="10px" style:display="inline-block">
-										<FaRegTrashAlt />
-									</span>
-								</button>
+						{#each todos as todo, index (todo.id)}
+							{@const { id, completed, title } = todo}
+							<li>
+								<slot {todo} {index} {handleToggleTodo}>
+									<div class:completed>
+										<label>
+											<input
+												disabled={disabledItems.includes(id)}
+												on:input={(event) => {
+													event.currentTarget.checked = completed;
+													handleToggleTodo(id, !completed);
+												}}
+												type="checkbox"
+												checked={completed}
+											/>
+											<slot name="title">{title}</slot>
+										</label>
+										<button
+											disabled={disabledItems.includes(id)}
+											class="remove-todo-button"
+											aria-label="Remove todo: {title}"
+											on:click={() => handleRemoveTodo(id)}
+										>
+											<span style:width="10px" style:display="inline-block">
+												<FaRegTrashAlt />
+											</span>
+										</button>
+									</div>
+								</slot>
 							</li>
 						{/each}
 					{/if}
@@ -101,8 +111,15 @@
 		</div>
 	{/if}
 	<form class="add-todo-form" on:submit|preventDefault={handleAddTodo}>
-		<input bind:this={inputElement} bind:value={inputText} placeholder="New todo" />
-		<Button class="add-todo-button" type="submit" disabled={!inputText}>Add</Button>
+		<input
+			disabled={disableAdding || !todos}
+			bind:this={inputElement}
+			bind:value={inputText}
+			placeholder="New todo"
+		/>
+		<Button class="add-todo-button" type="submit" disabled={!inputText || disableAdding || !todos}
+			>Add</Button
+		>
 	</form>
 </div>
 
@@ -122,7 +139,7 @@
 				margin: 0;
 				padding: 10px;
 				list-style: none;
-				li {
+				li > div {
 					margin-bottom: 5px;
 					display: flex;
 					align-items: center;
@@ -152,6 +169,10 @@
 						right: 10px;
 						cursor: pointer;
 						display: none;
+						&:disabled {
+							opacity: 0.4;
+							cursor: not-allowed;
+						}
 						:global(svg) {
 							fill: #bd1414;
 						}
