@@ -2,6 +2,8 @@
 	import TodoList from './lib/TodoList.svelte';
 	import { v4 as uuid } from 'uuid';
 	import { onMount, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
+	import fade from './lib/transitions/fade';
 
 	let todoList;
 	let showList = true;
@@ -43,7 +45,7 @@
 		}).then(async (response) => {
 			if (response.ok) {
 				const todo = await response.json();
-				todos = [...todos, { ...todo, id: uuid() }];
+				todos = [{ ...todo, id: uuid() }, ...todos];
 
 				todoList.clearInput();
 			} else {
@@ -104,26 +106,24 @@
 <label><input type="checkbox" bind:checked={showList} />Show/Hide list</label>
 
 {#if showList}
-	<div style:max-width="330px">
+	<div style:max-width="660px">
 		<TodoList
 			{todos}
 			{error}
 			{isLoading}
 			disableAdding={isAdding}
 			{disabledItems}
+			scrollOnAdd="top"
 			bind:this={todoList}
 			on:addtodo={handleAddTodo}
 			on:removetodo={handleRemoveTodo}
 			on:toggletodo={handleToggleTodo}
-			let:todo
-			let:handleToggleTodo
-			let:index
-		>
-			<svelte:fragment slot="title">{index + 1}- {todo.title}</svelte:fragment>
-			<!-- {@const { id, completed, title } = todo} -->
-			<!-- <div>{todo.title}</div> -->
-			<!-- <Todo {todo} on:remove on:toggle /> -->
-			<!-- <div>
+		/>
+		<!-- <svelte:fragment slot="title">{index + 1}- {todo.title}</svelte:fragment> -->
+		<!-- {@const { id, completed, title } = todo} -->
+		<!-- <div>{todo.title}</div> -->
+		<!-- <Todo {todo} on:remove on:toggle /> -->
+		<!-- <div>
 				<input
 					disabled={disabledItems.includes(id)}
 					on:input={(event) => {
@@ -135,8 +135,16 @@
 				/>
 				{title}
 			</div> -->
-		</TodoList>
+		<!-- </TodoList> -->
 	</div>
+	{#if todos}
+		<p>
+			Number of todos {#key todos.length}<span
+					style:display="inline-block"
+					in:fly|local={{ y: -10 }}>{todos.length}</span
+				>{/key}
+		</p>
+	{/if}
 {/if}
 
 <style>
