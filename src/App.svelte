@@ -1,150 +1,38 @@
 <script>
-	import TodoList from './lib/TodoList.svelte';
-	import { v4 as uuid } from 'uuid';
-	import { onMount, tick } from 'svelte';
-	import { fly } from 'svelte/transition';
-	import fade from './lib/transitions/fade';
+	import { onMount } from 'svelte';
+	import Home from './lib/pages/Home.svelte';
+	import Settings from './lib/pages/Settings.svelte';
 
-	let todoList;
-	let showList = true;
+	import Head from './lib/Head.svelte';
 
-	let todos = null;
-	let error = null;
-	let isLoading = false;
-	let isAdding = false;
-	let disabledItems = [];
+	let page;
 
-	onMount(() => {
-		loadTodos();
-	});
-
-	async function loadTodos() {
-		isLoading = true;
-		await fetch('https://jsonplaceholder.typicode.com/todos?_limit=10').then(async (response) => {
-			if (response.ok) {
-				todos = await response.json();
-			} else {
-				error = 'Error loading todos';
-			}
-		});
-		isLoading = false;
+	function onRouteChange() {
+		const path = window.location.hash.slice(1);
+		if (path === '/') {
+			page = 'home';
+		} else if (path === '/settings') {
+			page = 'settings';
+		} else {
+			window.location.hash = '/';
+		}
 	}
 
-	async function handleAddTodo(event) {
-		event.preventDefault();
-		isAdding = true;
-		await fetch('https://jsonplaceholder.typicode.com/todos', {
-			method: 'POST',
-			body: JSON.stringify({
-				title: event.detail.title,
-				completed: false
-			}),
-			headers: {
-				'Content-type': 'application/json; charset=UTF-8'
-			}
-		}).then(async (response) => {
-			if (response.ok) {
-				const todo = await response.json();
-				todos = [{ ...todo, id: uuid() }, ...todos];
-
-				todoList.clearInput();
-			} else {
-				alert('Error adding todo');
-			}
-		});
-		isAdding = false;
-		await tick();
-		todoList.focusInput();
-	}
-
-	async function handleRemoveTodo(event) {
-		const id = event.detail.id;
-		if (disabledItems.includes(id)) return;
-		disabledItems = [...disabledItems, id];
-		await fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-			method: 'DELETE'
-		}).then((response) => {
-			if (response.ok) {
-				todos = todos.filter((todo) => todo.id !== event.detail.id);
-			} else {
-				alert('Error removing todo');
-			}
-		});
-		disabledItems = disabledItems.filter((item) => item !== id);
-	}
-
-	async function handleToggleTodo(event) {
-		const id = event.detail.id;
-		const value = event.detail.value;
-		if (disabledItems.includes(id)) return;
-		disabledItems = [...disabledItems, id];
-		await fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-			method: 'PATCH',
-			body: JSON.stringify({
-				completed: value
-			}),
-			headers: {
-				'Content-type': 'application/json; charset=UTF-8'
-			}
-		}).then(async (response) => {
-			if (response.ok) {
-				const updatedTodo = await response.json();
-				todos = todos.map((todo) => {
-					if (todo.id === id) {
-						return updatedTodo;
-					}
-					return { ...todo };
-				});
-			} else {
-				alert('Error toggling todo');
-			}
-		});
-		disabledItems = disabledItems.filter((item) => item !== id);
-	}
+	onMount(onRouteChange);
 </script>
 
-<label><input type="checkbox" bind:checked={showList} />Show/Hide list</label>
+<Head />
 
-{#if showList}
-	<div style:max-width="660px">
-		<TodoList
-			{todos}
-			{error}
-			{isLoading}
-			disableAdding={isAdding}
-			{disabledItems}
-			scrollOnAdd="top"
-			bind:this={todoList}
-			on:addtodo={handleAddTodo}
-			on:removetodo={handleRemoveTodo}
-			on:toggletodo={handleToggleTodo}
-		/>
-		<!-- <svelte:fragment slot="title">{index + 1}- {todo.title}</svelte:fragment> -->
-		<!-- {@const { id, completed, title } = todo} -->
-		<!-- <div>{todo.title}</div> -->
-		<!-- <Todo {todo} on:remove on:toggle /> -->
-		<!-- <div>
-				<input
-					disabled={disabledItems.includes(id)}
-					on:input={(event) => {
-						event.currentTarget.checked = completed;
-						handleToggleTodo(id, !completed);
-					}}
-					type="checkbox"
-					checked={completed}
-				/>
-				{title}
-			</div> -->
-		<!-- </TodoList> -->
-	</div>
-	{#if todos}
-		<p>
-			Number of todos {#key todos.length}<span
-					style:display="inline-block"
-					in:fly|local={{ y: -10 }}>{todos.length}</span
-				>{/key}
-		</p>
-	{/if}
+<svelte:window on:hashchange={onRouteChange} />
+<nav>
+	<a href="#/">Home</a>
+	<a href="#/settings">Settings</a>
+</nav>
+
+{#if page === 'home'}
+	<Home />
+{:else if page === 'settings'}
+	<Settings />
 {/if}
 
 <style>
